@@ -25,7 +25,7 @@ describe("Crowdsale", () => {
 		user1 = accounts[1]
 
 		// Deploy Crowdsale
-		crowdsale = await Crowdsale.deploy(token.address, ether(1))
+		crowdsale = await Crowdsale.deploy(token.address, ether(1), "1000000")
 
 		// Send tokens to crowdsale
 		let transaction = await token.connect(deployer).transfer(crowdsale.address, tokens(1000000))
@@ -49,12 +49,12 @@ describe("Crowdsale", () => {
 
 	describe("Buying Tokens", () => {
 		let transaction, result 
-		let amount = tokens(10)
+		let amount = tokens(10) 
 
 		describe("Success", () => {
 			beforeEach(async () => {
-				transaction = await crowdsale.connect(user1).buyTokens(amount, { value: ether(10)})
-				result = await transaction.wait()
+				transaction = await crowdsale.connect(user1).buyTokens(amount, { value: ether(10) })
+				result = await transaction.wait() 
 			})
 
 			it("transfers tokens", async () => {
@@ -64,7 +64,18 @@ describe("Crowdsale", () => {
 
 			it("updates contracts ether balance", async () => {
 				expect(await ethers.provider.getBalance(crowdsale.address)).to.equal(amount)
-			})					
+			})		
+
+			it("updates tokensSold", async () => {
+				expect(await crowdsale.tokensSold()).to.equal(amount)
+			})
+
+			it("emits a buy event", async () => {
+				console.log(result)
+				await expect(transaction).to.emit(crowdsale, "Buy")
+				.withArgs(amount, user1.address)
+			})	
+
 		})
 
 		describe("Failure", () => {
@@ -72,6 +83,7 @@ describe("Crowdsale", () => {
 			it("rejects insufficient ETH", async () => {
 				await expect(crowdsale.connect(user1).buyTokens(tokens(10), { value: 0 })).to.be.reverted
 			})
-	})
 
+		})
+	})	
 })
