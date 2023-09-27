@@ -4,7 +4,10 @@ import { ethers } from "ethers"
 
 // Components
 import Navigation from "./Navigation";
+import Buy from "./Buy";
 import Info from "./Info";
+import Progress from "./Progress";
+import Loading from "./Loading";
 
 // ABIs
 import TOKEN_ABI from "../abis/Token.json"
@@ -18,6 +21,11 @@ function App() {
 	const [crowdsale, setCrowdsale] = useState(null)
 
 	const [account, setAccount] = useState(null)
+	const [accountBalance, setAccountBalance] = useState(0)
+
+	const [price, setPrice] = useState(0)
+	const [maxTokens, setMaxTokens] = useState(0)
+	const [tokensSold, setTokensSold] = useState(0)
 
 	const [isLoading, setIsLoading] = useState(true)
 
@@ -36,8 +44,23 @@ function App() {
 		const account = ethers.utils.getAddress(accounts[0])
 		setAccount(account)
 
-		setIsLoading(false)
+		// Fetch account balance
+		const accountBalance = ethers.utils.formatUnits(await token.balanceOf(account), 18)
+		setAccountBalance(accountBalance)
 
+		// Fetch price
+		const price = ethers.utils.formatUnits(await crowdsale.price(), 18)
+		setPrice(price)
+
+		// Fetch max tokens
+		const maxTokens = ethers.utils.formatUnits(await crowdsale.maxTokens(), 18)
+		setMaxTokens(maxTokens)
+
+		// Fetch tokens sold
+		const tokensSold = ethers.utils.formatUnits(await crowdsale.tokensSold(), 18)
+		setTokensSold(tokensSold)
+
+		setIsLoading(false)
 	}
 
 	useEffect(() => {
@@ -46,13 +69,25 @@ function App() {
 		}
 	}, [isLoading]);
 
-
 	return(
 		<Container>
 			<Navigation />
+
+			<h1 className="my-4 text-center">Introducing DApp Token!</h1>
+
+			{isLoading ? (
+				<Loading />
+			) : (
+				<>
+				<p className="text-center"><strong>Current Price:</strong> {price} ETH</p>
+				<Buy provider={provider} price={price} crowdsale={crowdsale} setIsLoading={setIsLoading} />
+				<Progress maxTokens={maxTokens} tokensSold={tokensSold} />
+				</>
+			)}
+
 			<hr />
 			{account && (
-				<Info account={account} />
+				<Info account={account} accountBalance={accountBalance} />
 			)}
 		</Container>
 	)
